@@ -17,7 +17,7 @@ endpoint_url = 'https://kr.object.ncloudstorage.com'
 region_name = 'kr-standard'
 access_key = 'JS96LdRZxwUaJ7hlS8oX'
 secret_key = 'dBofyAEvH84Mm6ESChoojJcWUkkitu7VFVUMY9Ii'
-version = '1.22'
+version = '1.3'
 
 
 # excepthook을 통해서 catch 못한 오류 찾아냄
@@ -59,12 +59,17 @@ class multi_thread(QThread):
         1. 링크 -> 블로그 아이디로 교체
         2. 랭크를 list로 교체
         3. 랭크 크롤링을 다수로 변경
+        
+        22.04.01 변경
+        1. 더이상 회사는 유효하지 않습니다. (삭제)
+        2. blogLinkList를 list로 변경하였습니다.
+        ([bid, keyword, rank])
     """
 
     def __init__(self):
         QThread.__init__(self)
         self.today = datetime.datetime.today().strftime('%Y-%m-%d')
-        self.companyAndBlog = blogKeywordInfo()
+        self.keywordAndBlog = blogKeywordInfo()
         # count용 변수 (몇개 남았는가?)
         self.count = countControl()
         # url, header 등 검색 제어용 변수
@@ -82,9 +87,10 @@ class multi_thread(QThread):
         QtTest.QTest.qWait(n * 1000)
 
     def run(self):
-        self.count.setCountMax(len(self.companyAndBlog.companyList))
+        self.count.setCountMax(len(self.keywordAndBlog.blogLinkList))
+        self.keywordAndBlog.firstsize = self.keywordAndBlog.current_list_size()
         self.progressClear()
-        while self.companyAndBlog.company_list_size() != 0:
+        while self.keywordAndBlog.current_list_size() != self.keywordAndBlog.cur:
             try:
                 # 키워드 서칭
                 self.keywordSearch()
@@ -122,24 +128,20 @@ class multi_thread(QThread):
         self.setKeywordRemain.emit(print_string)
 
     def keywordSearch(self):
-        currentCompany = self.companyAndBlog.companyList[0]
-        self.addloglist(currentCompany + " 회사 발행 순위 검색 시작")
-        try:
-            linkrange = self.companyAndBlog.current_company_link_number(currentCompany)
-        except:
-            self.error_emit.emit('파일 중 빈 파일이나 깨진 파일이 발견되었습니다. 다시 넣어주세요.')
-            raise FileNotFoundError
-        for i in range(linkrange):
-            self.gui_event_pending_dismiss()
-            targetLink = self.companyAndBlog.blogLinkList[currentCompany][i][0]
-            targetKeyword = self.companyAndBlog.blogLinkList[currentCompany][i][1]
-            self.search_ui_refresh(i, linkrange, targetKeyword)
-            self.search.init_control()
-            # TODO : 아래 줄부터 랭크 반복문 설정
-            rank = self.rankfind(targetLink, targetKeyword)
-            # 랭크 설정!
-            self.companyAndBlog.blogLinkList[currentCompany][i][2] = rank
-        self.companyAndBlog.dequeue()
+        # id, keyword, rank
+        currentKeyword = self.keywordAndBlog.blogLinkList[self.keywordAndBlog.cur][1]
+        self.addloglist(currentKeyword + " 키워드 순위 검색 시작")
+        self.gui_event_pending_dismiss()
+
+        targetLink = self.keywordAndBlog.blogLinkList[self.keywordAndBlog.cur][0]
+        targetKeyword = self.keywordAndBlog.blogLinkList[self.keywordAndBlog.cur][1]
+        self.search_ui_refresh(self.count.count, self.keywordAndBlog.firstsize, targetKeyword)
+        self.search.init_control()
+        rank = self.rankfind(targetLink, targetKeyword)
+        # 랭크 설정!
+        self.keywordAndBlog.blogLinkList[self.keywordAndBlog.cur][2] = rank
+
+        self.keywordAndBlog.dequeue()
 
     def search_ui_refresh(self, i, linkrange, targetKeyword):
         self.set_current_keyword_indictor(targetKeyword)
@@ -180,7 +182,7 @@ class multi_thread(QThread):
                 except:
                     self.search.searchMaxCount = int(html_bs.text[14])  # total 1자리
         find_url = [tag.get('href') for tag in area]  # url 따기
-        rank = self.url_link_compare(targetLink, find_url)
+        rank = self.url_blog_compare(targetLink, find_url)
         return rank
 
     # url 대조 및 rank 확인 : rank를 찾으면 반환, 없으면 0
@@ -194,26 +196,51 @@ class multi_thread(QThread):
             rank += 1
         return -rank
 
+    # url 대조 : 블로그 아이디로 대조
+    def url_blog_compare(self, target, urls):
+        rank = 1
+        for url in urls:
+            url = url[25:len(url) - 2]  # 블로그 아이디 분리
+            if url == target:
+                return rank
+            rank += 1
+        return -rank
+
     def after_serach(self):
         self.clearTable.emit()
         self.rowcnt = 0
         try:
             total_txt = './결과/통합순위_' + self.today + '.txt'
             with open(total_txt, 'w') as f:
-                for company in self.companyAndBlog.blogLinkList.keys():
+                self.print_result_no_company(f)
+                '''
+                for company in self.keywordAndBlog.blogLinkList.keys():
                     self.print_result(company, f)
+                '''
         except:
             self.error_emit.emit('순위 결과를 쓰는 도중 문제가 발생했습니다.')
             return
         self.addloglist('모든 작업이 완료되었습니다.')
 
+    def print_result_no_company(self, file):
+        for t in self.keywordAndBlog.blogLinkList:
+            bid = t[0]
+            keyword = t[1]
+            rank = t[2]
+            if rank != 0:
+                string = keyword + '\t' + bid + '\t' + str(rank) + '\n'
+                file.write(string)
+                self.add_result_item_to_table(keyword, bid, rank)
+
+
+    # 사용하지 않습니다.
     def print_result(self, company, file):
         company_txt = './결과/' + company + '_' + self.today + '.txt'
         with open(company_txt, 'w') as file_company:
-            for i in range(self.companyAndBlog.current_company_link_number(company)):
-                link = self.companyAndBlog.blogLinkList[company][i][0]
-                keyword = self.companyAndBlog.blogLinkList[company][i][1]
-                rank = self.companyAndBlog.blogLinkList[company][i][2]
+            for i in range(self.keywordAndBlog.current_company_link_number(company)):
+                link = self.keywordAndBlog.blogLinkList[company][i][0]
+                keyword = self.keywordAndBlog.blogLinkList[company][i][1]
+                rank = self.keywordAndBlog.blogLinkList[company][i][2]
                 if rank == 0:
                     rank = '누락'
                 string = company + '\t' + keyword + '\t' + link + '\t' + str(rank) + '\n'
@@ -221,6 +248,13 @@ class multi_thread(QThread):
                 file_company.write(string)
                 file.write(string)
                 self.add_result_item_to_table(company, keyword, rank)
+
+
+    def add_result_item_to_table_notcompany(self, keyword, bid, rank):
+        self.increase_row()
+        self.addResult.emit(self.rowcnt - 1, 0, keyword)
+        self.addResult.emit(self.rowcnt - 1, 1, bid)
+        self.addResult.emit(self.rowcnt - 1, 2, str(rank))
 
     def add_result_item_to_table(self, company, keyword, rank):
         self.increase_row()
@@ -311,14 +345,44 @@ class MainUi(QWidget, form_class):
     # 시작 버튼을 눌렀을 때 초기화 함수
     def startWorkInit(self):
         try:
-            self.th.companyAndBlog.clear()
+            self.th.keywordAndBlog.clear()
             self.logList.clear()
             self.logList.addItem('순위 검색을 시작합니다.')
-            self.readPublishList()
+            #self.readPublishList()
+            self.readKeywordID()
+        except ValueError:
+            self.logList.addItem('아이디 및 키워드 읽기에 실패했습니다. 파일을 초기화해주세요.')
         except Exception as e:
             self.logList.addItem(str(e))
-            self.logList.addItem('발행글 및 키워드 읽기에 실패했습니다. 파일을 초기화해주세요.')
+            self.logList.addItem('아이디 및 키워드 읽기에 실패했습니다. 파일을 초기화해주세요.')
 
+
+    def readKeywordID(self):
+        self.keyw = list()
+        self.ids = list()
+        try:
+            with open('./키워드.txt', 'rt', encoding='utf8') as f:
+                self.keyw = f.read().split('\n')
+        except Exception as e:
+            # encoding 문제시
+            with open('./키워드.txt', 'rt') as f:
+                self.keyw = f.read().split('\n')
+        try:
+            with open('./아이디.txt', 'rt', encoding='utf8') as f:
+                self.ids = f.read().split('\n')
+        except Exception as e:
+            with open('./아이디.txt', 'rt') as f:
+                self.ids = f.read().split('\n')
+
+        if self.keyw == [] or self.ids == []:
+            raise ValueError
+
+        for first in self.keyw:
+            for second in self.ids:
+                self.th.keywordAndBlog.add_link(second, first)
+
+
+    '''
     # 데이터 처리 메서드
     # 발행글 읽기 : 실패시 valueError
     def readPublishList(self):
@@ -338,6 +402,7 @@ class MainUi(QWidget, form_class):
                 with open(file_dir, 'rt') as f:
                     self.read_link(currentCompanyName, f)
 
+
     def read_link(self, currentCompanyName, f):
         link_and_keyword = f.read().splitlines()  # 분리
         for tmp in link_and_keyword:
@@ -356,6 +421,7 @@ class MainUi(QWidget, form_class):
             else:
                 break
         return link
+    '''
 
 
 # 아래부터는 인증파트
@@ -365,7 +431,7 @@ class updateUI(QWidget):  # update check
         s3 = boto3.client(service_name, endpoint_url=endpoint_url, aws_access_key_id=access_key,
                           aws_secret_access_key=secret_key)
         bucket_name = 'viewranking'
-        object_name = 'version.txt'
+        object_name = 'version2.txt'
         local_file_path = './data/version.txt'
         try:
             s3.download_file(bucket_name, object_name, local_file_path)

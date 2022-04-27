@@ -24,7 +24,6 @@ class searchControl:
         self.searchMaxCount = 10000
         self.searchCurrentCount = 1
 
-        self.searchRankMaxCount = 50
 
     def set_url(self, keyword):
         self.clear_url()

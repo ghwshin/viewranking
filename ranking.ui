@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>뷰탭순위확인기 v1.22 by SHW</string>
+   <string>뷰탭순위확인기 v1.3 by SHW</string>
   </property>
   <widget class="QPushButton" name="startButton">
    <property name="geometry">
@@ -95,12 +95,12 @@
    </attribute>
    <column>
     <property name="text">
-     <string>업체명</string>
+     <string>키워드</string>
     </property>
    </column>
    <column>
     <property name="text">
-     <string>키워드</string>
+     <string>아이디</string>
     </property>
    </column>
    <column>

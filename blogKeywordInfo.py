@@ -1,28 +1,22 @@
 class blogKeywordInfo:
     def __init__(self):
-        self.blogLinkList = dict()
-        self.companyList = []
+        self.blogLinkList = list()
+        self.firstsize = 0
+        self.cur = 0
 
-    def add_company(self, company):
-        self.companyList.append(company)
-
-    def add_link(self, company, bid, keyword):
+    def add_link(self, bid, keyword):
         try:
-            self.blogLinkList[company].append([bid, keyword, 0])
+            self.blogLinkList.append([bid, keyword, 0])
         except:
-            self.blogLinkList[company] = list()
-            self.blogLinkList[company].append([bid, keyword, 0])
+            self.blogLinkList = list()
+            self.blogLinkList.append([bid, keyword, 0])
 
-    def current_company_link_number(self, company):
-        return len(self.blogLinkList[company])
-
-    def company_list_size(self):
-        return len(self.companyList)
+    def current_list_size(self):
+        return len(self.blogLinkList)
 
     def dequeue(self):
         # try - catch 필요
-        del self.companyList[0]
+        self.cur += 1
 
     def clear(self):
         self.blogLinkList.clear()
-        self.companyList.clear()
