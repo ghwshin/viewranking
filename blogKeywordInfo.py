@@ -41,6 +41,9 @@ class blogKeywordInfo:
     def dequeue(self):
         return self.blogLinkList.get()
 
+    def finish_list_empty(self):
+        return len(self.finished_list) == 0
+
     def add_finish_job(self, job):
         self.finished_list.append(job)
 

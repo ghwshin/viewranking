@@ -87,8 +87,8 @@ class main_engine(QThread):
     def add_result_item_to_table_notcompany(self, keyword, blog_name, rank):
         self.increase_row()
         self.addResult.emit(self.rowcnt - 1, 0, keyword)
-        self.addResult.emit(self.rowcnt - 1, 1, blog_name)
-        self.addResult.emit(self.rowcnt - 1, 2, self.ranklist_to_string(rank))
+        # self.addResult.emit(self.rowcnt - 1, 1, blog_name)
+        self.addResult.emit(self.rowcnt - 1, 1, self.ranklist_to_string(rank))
 
     """
     def add_result_item_to_table(self, company, keyword, rank):
@@ -147,7 +147,7 @@ class main_engine(QThread):
                 break
             else:
                 self.search.search_counting()
-        rank = list(set(rank))
+        #rank = list(set(rank))
         return rank
 
     # 검색후 url을 찾습니다.
@@ -214,15 +214,22 @@ class main_engine(QThread):
         self.addloglist('모든 작업이 완료되었습니다.')
 
     def print_result_no_company(self, file):
+        rank = list()
+        before_keyword = ""
         for t in self.keywordAndBlog.get_finish_job_list():
             blog_name = t[0]
             keyword = t[1]
-            rank = list()
+            if before_keyword == "":
+                before_keyword = keyword
+            elif before_keyword != keyword or self.keywordAndBlog.finish_list_empty():
+                rank = list(set(rank))
+                rank.sort()
+                if rank:
+                    string = before_keyword + '\t' + self.ranklist_to_string(rank) + '\n'
+                    file.write(string)
+                    self.add_result_item_to_table_notcompany(before_keyword, blog_name, rank)
+                before_keyword = keyword
+                rank = list()
             for _rank in t[2]:
                 if _rank > 0:
                     rank.append(_rank)
-
-            if rank:
-                string = keyword + '\t' + blog_name + '\t' + self.ranklist_to_string(rank) + '\n'
-                file.write(string)
-                self.add_result_item_to_table_notcompany(keyword, blog_name, rank)
