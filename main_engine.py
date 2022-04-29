@@ -111,6 +111,8 @@ class main_engine(QThread):
 
     # label 변경시 렉 줄이기
     def gui_event_pending_dismiss(self):
+        if self.count.count % 100 == 0:
+            self.clear_value.emit()
         QApplication.processEvents()
         self.label_repaint.emit()
 
@@ -145,6 +147,7 @@ class main_engine(QThread):
                 break
             else:
                 self.search.search_counting()
+        rank = list(set(rank))
         return rank
 
     # 검색후 url을 찾습니다.
@@ -153,7 +156,6 @@ class main_engine(QThread):
         html_bs = BeautifulSoup(resource.text, 'html.parser')
         area = html_bs.find_all('a', {'class': '\\\"sub_txt'})
         self.update_max_count(html_bs)
-        """ find_url = [tag.get('href') for tag in area]  # url 따기 """
         finded = [tag.text for tag in area]
         rank = self.url_blog_name_compare(target_name, finded)
         return rank
@@ -219,6 +221,7 @@ class main_engine(QThread):
             for _rank in t[2]:
                 if _rank > 0:
                     rank.append(_rank)
+
             if rank:
                 string = keyword + '\t' + blog_name + '\t' + self.ranklist_to_string(rank) + '\n'
                 file.write(string)

@@ -6,6 +6,7 @@ from UAC import UAC
 from loginui import LoginUI
 from main_engine import main_engine
 from updateui import updateUI
+import logo_rc
 
 form_class = uic.loadUiType('ranking.ui')[0]
 
