@@ -4,7 +4,7 @@ from PyQt5 import uic
 import traceback, sys, os
 from UAC import UAC
 from loginui import LoginUI
-from main_thread import main_thread
+from main_engine import main_engine
 from updateui import updateUI
 
 form_class = uic.loadUiType('ranking.ui')[0]
@@ -14,9 +14,10 @@ form_class = uic.loadUiType('ranking.ui')[0]
 def trap_exc_during_debug(*args):
     print(args)
     with open('./debug.txt', 'w', encoding='utf8') as f:
-        f.write(str((traceback.format_exception)(*args)))
+        f.write(str(traceback.format_exception(*args)))
         f.flush()
     sys.exit(666)
+
 
 sys.excepthook = trap_exc_during_debug
 
@@ -24,12 +25,11 @@ sys.excepthook = trap_exc_during_debug
 class MainUi(QWidget, form_class):
     def __init__(self):
         super().__init__()
-        # 기타 클래스 인스턴스 변수
 
         # ui loading
         self.setupUi(self)
         # thread 선언
-        self.th = main_thread()
+        self.th = main_engine()
 
         # error connect
         self.th.error_emit.connect(self.error_handler)
@@ -93,18 +93,17 @@ class MainUi(QWidget, form_class):
             self.th.keywordAndBlog.clear()
             self.logList.clear()
             self.logList.addItem('순위 검색을 시작합니다.')
-            #self.readPublishList()
-            self.readKeywordID()
+            # self.readPublishList()
+            self.read_keyword_blog_name()
         except ValueError:
             self.logList.addItem('아이디 및 키워드 읽기에 실패했습니다. 파일을 초기화해주세요.')
         except Exception as e:
             self.logList.addItem(str(e))
             self.logList.addItem('아이디 및 키워드 읽기에 실패했습니다. 파일을 초기화해주세요.')
 
-
-    def readKeywordID(self):
+    def read_keyword_blog_name(self):
         self.keyw = list()
-        self.ids = list()
+        self.blog_names = list()
         try:
             with open('./키워드.txt', 'rt', encoding='utf8') as f:
                 self.keyw = f.read().split('\n')
@@ -113,60 +112,18 @@ class MainUi(QWidget, form_class):
             with open('./키워드.txt', 'rt') as f:
                 self.keyw = f.read().split('\n')
         try:
-            with open('./아이디.txt', 'rt', encoding='utf8') as f:
-                self.ids = f.read().split('\n')
+            with open('블로그이름.txt', 'rt', encoding='utf8') as f:
+                self.blog_names = f.read().split('\n')
         except Exception as e:
-            with open('./아이디.txt', 'rt') as f:
-                self.ids = f.read().split('\n')
+            with open('블로그이름.txt', 'rt') as f:
+                self.blog_names = f.read().split('\n')
 
-        if self.keyw == [] or self.ids == []:
+        if self.keyw == [] or self.blog_names == []:
             raise ValueError
 
         for first in self.keyw:
-            for second in self.ids:
+            for second in self.blog_names:
                 self.th.keywordAndBlog.add_link(second, first)
-
-
-    '''
-    # 데이터 처리 메서드
-    # 발행글 읽기 : 실패시 valueError
-    def readPublishList(self):
-        file_list = os.listdir('./발행글링크')
-        if file_list == []:
-            raise ValueError
-        for file in file_list:
-            currentCompanyName = file[:-4]
-            self.th.companyAndBlog.add_company(currentCompanyName)  # 파일 이름 확장자 제외 : 회사명
-            file_dir = './발행글링크/' + file
-            try:
-                with open(file_dir, 'rt', encoding='utf8') as f:
-                    self.read_link(currentCompanyName, f)
-            except IndexError as e:
-                pass
-            except Exception as e:  # encoding 문제 발생시
-                with open(file_dir, 'rt') as f:
-                    self.read_link(currentCompanyName, f)
-
-
-    def read_link(self, currentCompanyName, f):
-        link_and_keyword = f.read().splitlines()  # 분리
-        for tmp in link_and_keyword:
-            link = self.no_tap_twice(tmp)
-            # 탭문자 중복 방지용입니다.
-            keyword = tmp.split('\t')[0]
-            # robust test : 잘못된 입력?
-            self.th.companyAndBlog.add_link(currentCompanyName, link, keyword)
-
-    def no_tap_twice(self, tmp):
-        i = 1
-        while True:
-            link = tmp.split('\t')[i]
-            if link == '' or link == '\t':
-                i += 1
-            else:
-                break
-        return link
-    '''
 
 
 if __name__ == '__main__':
