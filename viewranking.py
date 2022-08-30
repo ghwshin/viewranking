@@ -91,6 +91,7 @@ class MainUi(QWidget, form_class):
     # 시작 버튼을 눌렀을 때 초기화 함수
     def startWorkInit(self):
         try:
+            self.all_find_checked()
             self.th.keywordAndBlog.clear()
             self.logList.clear()
             self.logList.addItem('순위 검색을 시작합니다.')
@@ -129,8 +130,11 @@ class MainUi(QWidget, form_class):
 
 if __name__ == '__main__':
     ranking_app = QApplication(sys.argv)
-    uac = UAC()
-    uac.uacUI()
+    if len(sys.argv) >= 2 and sys.argv[1] == '--debug':
+        print(f"uac disabled")
+    else:
+        uac = UAC()
+        uac.uacUI()
 
     mainWindow = MainUi()
     loginui = LoginUI()

@@ -35,7 +35,10 @@ class blogKeywordInfo:
             self.blogLinkList.put([blog_name, keyword, list()])
 
     def current_size(self):
-        self.size = self.blogLinkList.qsize()
+        if self.blogLinkList != None:
+            self.size = self.blogLinkList.qsize()
+        else:
+            self.size = 0
         return self.size
 
     def dequeue(self):

@@ -1,4 +1,5 @@
 import datetime
+import re
 import traceback
 
 import requests
@@ -200,6 +201,12 @@ class main_engine(QThread):
             rank += 1
         return -rank
 
+    def preprocess_sentence_kr(self, w):
+        w = w.strip()
+        w = re.sub(r"[^0-9가-힣?.!,¿]+", " ", w)  # \n도 공백으로 대체해줌
+        w = w.strip()
+        return w
+
     def after_serach(self):
         self.clearTable.emit()
         self.rowcnt = 0
@@ -225,6 +232,7 @@ class main_engine(QThread):
                 rank = list(set(rank))
                 rank.sort()
                 if rank:
+                    before_keyword = self.preprocess_sentence_kr(before_keyword)
                     string = before_keyword + '\t' + self.ranklist_to_string(rank) + '\n'
                     file.write(string)
                     self.add_result_item_to_table_notcompany(before_keyword, blog_name, rank)
