@@ -38,6 +38,8 @@ class main_engine(QThread):
         self.search = searchControl()
         # resultTable용
         self.rowcnt = 0
+        # 순위 제한 변수
+        self.rankLimits = 0
 
     def __del__(self):
         self.wait()
@@ -175,7 +177,9 @@ class main_engine(QThread):
         rank = list()
         for rank_idx in range(len(names)):
             if target == names[rank_idx]:
-                rank.append(rank_idx + self.search.searchCurrentCount)
+                current_rank = rank_idx + self.search.searchCurrentCount
+                if self.rankLimits == 0 or current_rank <= self.rankLimits:
+                    rank.append(current_rank)
         if not rank:
             rank.append(-1)
         return rank

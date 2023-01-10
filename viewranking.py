@@ -97,6 +97,7 @@ class MainUi(QWidget, form_class):
             self.logList.addItem('순위 검색을 시작합니다.')
             # self.readPublishList()
             self.read_keyword_blog_name()
+            self.rank_limit_read()
         except ValueError:
             self.logList.addItem('아이디 및 키워드 읽기에 실패했습니다. 파일을 초기화해주세요.')
         except Exception as e:
@@ -126,6 +127,19 @@ class MainUi(QWidget, form_class):
         for first in self.keyw:
             for second in self.blog_names:
                 self.th.keywordAndBlog.add_link(second, first)
+
+    def rank_limit_read(self):
+        try:
+            limits = self.rankingLimit.text()
+            limits = int(limits)
+            if limits >= 0 and limits <= 9999999:
+                self.th.rankLimits = limits
+                return
+            else:
+                self.logList.addItem('순위 출력 제한의 입력값이 유효하지 않습니다. 모두 출력합니다.')
+        except:
+            self.logList.addItem('순위 출력 제한의 입력값이 유효하지 않습니다. 모두 출력합니다.')
+        self.th.rankLimits = 0
 
 
 if __name__ == '__main__':
