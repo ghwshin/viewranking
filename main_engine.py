@@ -106,6 +106,8 @@ class main_engine(QThread):
         for rank in rank_list:
             if rank != -1:
                 _restr += (str(rank) + ",")
+            else:
+                _restr = ","
         return _restr[0:len(_restr) - 1]
 
     def increase_row(self):
@@ -235,11 +237,12 @@ class main_engine(QThread):
             elif before_keyword != keyword or self.keywordAndBlog.finish_list_empty():
                 rank = list(set(rank))
                 rank.sort()
-                if rank:
-                    before_keyword = self.preprocess_sentence_kr(before_keyword)
-                    string = before_keyword + '\t' + self.ranklist_to_string(rank) + '\n'
-                    file.write(string)
-                    self.add_result_item_to_table_notcompany(before_keyword, blog_name, rank)
+                if not rank:
+                    rank = [-1]
+                before_keyword = self.preprocess_sentence_kr(before_keyword)
+                string = before_keyword + '\t' + self.ranklist_to_string(rank) + '\n'
+                file.write(string)
+                self.add_result_item_to_table_notcompany(before_keyword, blog_name, rank)
                 before_keyword = keyword
                 rank = list()
             for _rank in t[2]:
