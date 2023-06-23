@@ -26,6 +26,7 @@ sys.excepthook = trap_exc_during_debug
 class MainUi(QWidget, form_class):
     def __init__(self):
         super().__init__()
+        self.excel_file = "rank_check.xlsx"
 
         # ui loading
         self.setupUi(self)
@@ -91,6 +92,11 @@ class MainUi(QWidget, form_class):
     # 시작 버튼을 눌렀을 때 초기화 함수
     def startWorkInit(self):
         try:
+            # 23.06.24 : excel file init.
+            self.th.excel.open_workbook(self.excel_file)
+            if not self.th.excel.control_status_check():
+                self.logList.addItem('엑셀 파일의 열기에 실패했습니다. 파일 상태를 확인해주세요.')
+
             self.all_find_checked()
             self.th.keywordAndBlog.clear()
             self.logList.clear()
@@ -107,13 +113,15 @@ class MainUi(QWidget, form_class):
     def read_keyword_blog_name(self):
         self.keyw = list()
         self.blog_names = list()
-        try:
-            with open('./키워드.txt', 'rt', encoding='utf8') as f:
-                self.keyw = f.read().split('\n')
-        except Exception as e:
-            # encoding 문제시
-            with open('./키워드.txt', 'rt') as f:
-                self.keyw = f.read().split('\n')
+        # 23.06.24 : keyword input .txt -> .xlsx
+        # try:
+        #     with open('./키워드.txt', 'rt', encoding='utf8') as f:
+        #         self.keyw = f.read().split('\n')
+        # except Exception as e:
+        #     # encoding 문제시
+        #     with open('./키워드.txt', 'rt') as f:
+        #         self.keyw = f.read().split('\n')
+        self.keyw = self.th.excel.read_keyword()
         try:
             with open('블로그이름.txt', 'rt', encoding='utf8') as f:
                 self.blog_names = f.read().split('\n')

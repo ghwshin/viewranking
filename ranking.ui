@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>뷰탭순위확인기 v2.1 by SHW</string>
+   <string>뷰탭순위확인기 v2.2 by SHW</string>
   </property>
   <widget class="QPushButton" name="startButton">
    <property name="geometry">
@@ -123,15 +123,15 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>600</x>
-     <y>90</y>
-     <width>171</width>
-     <height>16</height>
+        <x>600</x>
+        <y>90</y>
+        <width>171</width>
+        <height>16</height>
     </rect>
    </property>
-   <property name="text">
-    <string>(체크 해제시, 1 page 검색)</string>
-   </property>
+      <property name="text">
+          <string>(체크 해제시, 1 page 검색)</string>
+      </property>
   </widget>
      <widget class="QLabel" name="label_2">
          <property name="geometry">

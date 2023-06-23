@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 
 from Control import countControl, searchControl
 from blogKeywordInfo import blogKeywordInfo
+from ExcelControl import ExcelControl
 
 
 class main_engine(QThread):
@@ -32,6 +33,7 @@ class main_engine(QThread):
         QThread.__init__(self)
         self.today = datetime.datetime.today().strftime('%Y-%m-%d')
         self.keywordAndBlog = blogKeywordInfo()
+        self.excel = ExcelControl("rank_check.xlsx")
         # count용 변수 (몇개 남았는가?)
         self.count = countControl()
         # url, header 등 검색 제어용 변수
@@ -242,6 +244,9 @@ class main_engine(QThread):
                 before_keyword = self.preprocess_sentence_kr(before_keyword)
                 string = before_keyword + '\t' + self.ranklist_to_string(rank) + '\n'
                 file.write(string)
+                # 23.06.24 : excel file write (rank)
+                if not self.excel.write_rank(before_keyword, self.ranklist_to_string(rank)):
+                    raise IOError
                 self.add_result_item_to_table_notcompany(before_keyword, blog_name, rank)
                 before_keyword = keyword
                 rank = list()
