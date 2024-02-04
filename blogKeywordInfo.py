@@ -20,6 +20,11 @@ class blogKeywordInfo:
         1. 데이터 구조를 변경하였습니다. (큐로 구성)
         2. 구조는 다음과 같습니다.
         list[3] = {blog_name, keyword, rank(list)}
+
+        22.06.27 추가
+        1. blog_name은 더이상 유효하지 않습니다.
+        2. 하위 호환성을 위해 구조는 변경하지 않습니다.
+        3. viewranking.py에서 blog_name은 공백으로 남깁니다.
     """
 
     def __init__(self):

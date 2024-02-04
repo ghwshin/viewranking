@@ -1,4 +1,5 @@
 import openpyxl
+from datetime import datetime
 
 
 class ExcelControl:
@@ -6,6 +7,7 @@ class ExcelControl:
         self.workbook = self.open_workbook(wb_file_name)
         self.excel_file_name = wb_file_name
         self.row_keyword_pair = {}
+        self.row_num = 1
 
     # open workbook
     def open_workbook(self, file_name):
@@ -40,7 +42,10 @@ class ExcelControl:
             for j, cell_data in enumerate(row_data):
                 ws.cell(row=row + i, column=column + j, value=cell_data)
         try:
-            self.workbook.save(self.excel_file_name)
+            # 23.07.02 : 엑셀 파일 별도 파일 저장
+            today = datetime.today().strftime('%Y-%m-%d')
+            excel_write_path = './결과/통합순위_' + today + '.xlsx'
+            self.workbook.save(excel_write_path)
         except Exception as e:
             print(e)
             return False
@@ -68,17 +73,36 @@ class ExcelControl:
             if ret == None or ret == "":
                 break
             # self.row_keyword_pair.append([row_idx, ret])
-            self.row_keyword_pair[ret] = row_idx
+            # self.row_keyword_pair[ret] = row_idx
             keywords.append(ret)
             row_idx += 1
 
         return keywords
 
-    def write_rank(self, keyword, rank, rank_col=4):
-        row = self.row_keyword_pair[keyword]
-        if not self.access_point_check(row, rank_col):
+    def read_urls(self):
+        row_idx = 2
+        col_idx = 3
+        urls = []
+        while True:
+            ret = self._read_excel(row_idx, col_idx)
+            if ret == None or ret == "":
+                break
+            # self.row_keyword_pair[ret] = row_idx
+            urls.append(ret)
+            row_idx += 1
+        self.row_num = 1
+        return urls
+
+    def write_rank(self, rank, rank_col=4):
+        self.row_num += 1
+        if rank == -1:
+            ret = self._write_excel([['']], self.row_num, rank_col)
+            return ret
+        # row = self.row_keyword_pair[url]
+        if not self.access_point_check(self.row_num, rank_col):
             return False
-        return self._write_excel([[rank]], row, rank_col)
+        ret = self._write_excel([[rank]], self.row_num, rank_col)
+        return ret
 
 
 if __name__ == '__main__':

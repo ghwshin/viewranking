@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 
 from Control import countControl, searchControl
 from blogKeywordInfo import blogKeywordInfo
+from blogKeywordUrls import blogKeywordUrls
 from ExcelControl import ExcelControl
 
 
@@ -32,8 +33,9 @@ class main_engine(QThread):
     def __init__(self):
         QThread.__init__(self)
         self.today = datetime.datetime.today().strftime('%Y-%m-%d')
-        self.keywordAndBlog = blogKeywordInfo()
-        self.excel = ExcelControl("rank_check.xlsx")
+        # self.keywordAndBlog = blogKeywordInfo()
+        self.keywordAndBlog = blogKeywordUrls()
+        self.excel = ExcelControl("템플릿.xlsx")
         # count용 변수 (몇개 남았는가?)
         self.count = countControl()
         # url, header 등 검색 제어용 변수
@@ -57,16 +59,18 @@ class main_engine(QThread):
             except FileNotFoundError:
                 return
             except Exception as e:
-                self.error_add(e)
+                self.error_add()
                 return
             self.progressChange()
         try:
-            self.after_serach()
+            # 23.06.28
+            # self.after_serach()
+            self.print_in_excel()
         except Exception as e:
-            self.error_add(e)
+            self.error_add()
 
-    def error_add(self, err):
-        self.addloglist(traceback.format_exc())
+    def error_add(self):
+        self.error_emit.emit(traceback.format_exc())
         self.addloglist('에러가 발생했습니다.')
 
     def addloglist(self, _str):
@@ -89,11 +93,13 @@ class main_engine(QThread):
         print_string = '현재 작업 수 / 남은 작업 수 : ' + str(index + 1) + ' / ' + str(self.count.countmax)
         self.setKeywordRemain.emit(print_string)
 
-    def add_result_item_to_table_notcompany(self, keyword, blog_name, rank):
+    def add_result_item_to_table_notcompany(self, keyword, urls, rank):
         self.increase_row()
         self.addResult.emit(self.rowcnt - 1, 0, keyword)
-        # self.addResult.emit(self.rowcnt - 1, 1, blog_name)
-        self.addResult.emit(self.rowcnt - 1, 1, self.ranklist_to_string(rank))
+        self.addResult.emit(self.rowcnt - 1, 1, urls)
+        if rank != -1:
+            self.addResult.emit(self.rowcnt - 1, 2, str(rank))
+        # self.addResult.emit(self.rowcnt - 1, 2, self.ranklist_to_string(rank))
 
     """
     def add_result_item_to_table(self, company, keyword, rank):
@@ -128,7 +134,8 @@ class main_engine(QThread):
         self.sleep(0.3)
 
     def search_ui_refresh(self, i, target_keyword, target_name):
-        _ui_str = "블로그 이름({}) - {}".format(target_name, target_keyword)
+        # _ui_str = "블로그 이름({}) - {}".format(target_name, target_keyword)
+        _ui_str = "{} 검색 중...".format(target_keyword)
         self.set_current_keyword_indictor("검색 중인 키워드 : " + _ui_str)
         self.set_keyword_remain_indictor(i)
         self.addloglist(_ui_str + " 키워드 순위 검색")
@@ -144,38 +151,69 @@ class main_engine(QThread):
         current[2] = rank
         self.keywordAndBlog.add_finish_job(current)
 
+    # 23.06.28 : rank is one
     def rankfind(self, target_name, target_keyword):
         self.search.clear_url()
-        rank = list()
+        # rank = list()
+        rank = 0
         while True:
             self.search.set_url(target_keyword)
-            rank += self.find_rank(target_name)
-            if self.search.isEnded == True and self.search.searchMaxCount != searchControl.UNCHANGED:
+            tmp_rank, ret = self.find_rank(target_name)
+            if ret == True:
+                rank += tmp_rank
+                break
+            if self.search.isEnded == True and self.search.nextSearchStatus != searchControl.UNCHANGED:
+                rank = -1
                 break
             else:
                 self.search.search_counting()
+                rank += tmp_rank
         #rank = list(set(rank))
-        return rank
+        # 23.06.29 : 순위 출력 제한 부분 추가
+        if self.rankLimits == 0 or rank <= self.rankLimits:
+            return rank
+        else:
+            return -1
 
     # 검색후 url을 찾습니다.
     def find_rank(self, target_name):
         resource = requests.get(self.search.url, self.search.header)
         html_bs = BeautifulSoup(resource.text, 'html.parser')
-        area = html_bs.find_all('a', {'class': '\\\"sub_txt'})
         self.update_max_count(html_bs)
-        finded = [tag.text for tag in area]
-        rank = self.url_blog_name_compare(target_name, finded)
-        return rank
+        # 23.06.28 : target_name => url
+        area = html_bs.find_all('li')
+        finded = []
+        for href in area:
+            try:
+                # 23.11.07 : view탭 업데이트로 인한 로직 변경
+                # view_wrap->detail_box->title_area
+                tmp_str = href.contents[1].contents[2].contents[1].contents[1]['href']
+                finded.append(tmp_str[2:len(tmp_str) - 2])
+            except:
+                # Not wanted information
+                pass
+        # area = html_bs.find_all('a', {'class': '\\\"sub_txt'})
+        # finded = [tag.text for tag in area]
+        # rank = self.url_blog_name_compare(target_name, finded)
+        rank, ret = self.url_link_exectly_compare(target_name, finded)
+        return rank, ret
 
     def update_max_count(self, html_bs):
-        if self.search.searchMaxCount == searchControl.UNCHANGED:
-            try:
-                self.search.searchMaxCount = int(html_bs.text[13:16])  # total 갯수 확인
-            except:
-                try:
-                    self.search.searchMaxCount = int(html_bs.text[13:15])  # total 2자리
-                except:
-                    self.search.searchMaxCount = int(html_bs.text[13])  # total 1자리
+        # 24.02.04 : view -> 블로그 탭으로 변경됨
+        next_url = dict(eval("{" + html_bs.text[html_bs.text.find("nextUrl") - 1:len(html_bs.text) - 3]))["nextUrl"]
+        if next_url == "":
+            self.search.nextSearchStatus = searchControl.NONEXTURL
+        else:
+            self.search.nextSearchStatus = searchControl.AVALIABLEURL
+
+        # if self.search.nextSearchStatus == searchControl.UNCHANGED:
+        #     try:
+        #         self.search.nextSearchStatus = int(html_bs.text[13:16])  # total 갯수 확인
+        #     except:
+        #         try:
+        #             self.search.nextSearchStatus = int(html_bs.text[13:15])  # total 2자리
+        #         except:
+        #             self.search.nextSearchStatus = int(html_bs.text[13])  # total 1자리
 
     def url_blog_name_compare(self, target, names: list):
         rank = list()
@@ -209,6 +247,15 @@ class main_engine(QThread):
             rank += 1
         return -rank
 
+    # url 대조 : url이 완전 일치
+    def url_link_exectly_compare(self, target, urls):
+        rank = 1
+        for url in urls:
+            if url == target:
+                return rank, True
+            rank += 1
+        return rank, False
+
     def preprocess_sentence_kr(self, w):
         w = w.strip()
         w = re.sub(r"[^0-9가-힣?.!,¿]+", " ", w)  # \n도 공백으로 대체해줌
@@ -223,11 +270,12 @@ class main_engine(QThread):
             with open(total_txt, 'w') as f:
                 self.print_result_no_company(f)
         except Exception as e:
-            self.error_add(traceback.format_exc())
+            self.error_add()
             self.error_emit.emit('순위 결과를 쓰는 도중 문제가 발생했습니다.')
             return
         self.addloglist('모든 작업이 완료되었습니다.')
 
+    ## not used. (예전에 사용된 메서드)
     def print_result_no_company(self, file):
         rank = list()
         before_keyword = ""
@@ -245,6 +293,7 @@ class main_engine(QThread):
                 string = before_keyword + '\t' + self.ranklist_to_string(rank) + '\n'
                 file.write(string)
                 # 23.06.24 : excel file write (rank)
+                # warning : need change value.
                 if not self.excel.write_rank(before_keyword, self.ranklist_to_string(rank)):
                     raise IOError
                 self.add_result_item_to_table_notcompany(before_keyword, blog_name, rank)
@@ -253,3 +302,21 @@ class main_engine(QThread):
             for _rank in t[2]:
                 if _rank > 0:
                     rank.append(_rank)
+
+    def print_in_excel(self):
+        self.clearTable.emit()
+        self.rowcnt = 0
+        try:
+            for t in self.keywordAndBlog.get_finish_job_list():
+                url = t[0]
+                keyword = t[1]
+                rank = t[2]
+                # 23.06.24 : excel file write (rank))
+                if not self.excel.write_rank(rank):
+                    raise IOError
+                self.add_result_item_to_table_notcompany(keyword, url, rank)
+        except Exception as e:
+            self.error_add()
+            self.error_emit.emit('순위 결과를 쓰는 도중 문제가 발생했습니다.')
+            return
+        self.addloglist('모든 작업이 완료되었습니다.')

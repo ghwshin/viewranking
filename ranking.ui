@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>뷰탭순위확인기 v2.2 by SHW</string>
+      <string>뷰탭순위확인기 v3 by SHW</string>
   </property>
   <widget class="QPushButton" name="startButton">
    <property name="geometry">
@@ -84,18 +84,29 @@
      <height>381</height>
     </rect>
    </property>
+      <property name="sizeAdjustPolicy">
+          <enum>QAbstractScrollArea::AdjustIgnored</enum>
+      </property>
+      <property name="autoScroll">
+          <bool>true</bool>
+      </property>
    <property name="rowCount">
     <number>0</number>
    </property>
    <property name="columnCount">
-       <number>2</number>
+       <number>3</number>
    </property>
    <attribute name="horizontalHeaderDefaultSectionSize">
-       <number>380</number>
+       <number>253</number>
    </attribute>
    <column>
     <property name="text">
      <string>키워드</string>
+    </property>
+   </column>
+      <column>
+          <property name="text">
+              <string>url</string>
     </property>
    </column>
    <column>

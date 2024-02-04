@@ -3,9 +3,7 @@ from PyQt5.QtCore import *
 from PyQt5 import uic
 import traceback, sys, os
 from UAC import UAC
-from loginui import LoginUI
 from main_engine import main_engine
-from updateui import updateUI
 import logo_rc
 
 form_class = uic.loadUiType('ranking.ui')[0]
@@ -26,7 +24,7 @@ sys.excepthook = trap_exc_during_debug
 class MainUi(QWidget, form_class):
     def __init__(self):
         super().__init__()
-        self.excel_file = "rank_check.xlsx"
+        self.excel_file = "템플릿.xlsx"
 
         # ui loading
         self.setupUi(self)
@@ -86,7 +84,10 @@ class MainUi(QWidget, form_class):
     # 버튼 클릭 관련 메서드
     def startButton_clicked(self):
         print('start')
-        self.startWorkInit()
+        try:
+            self.startWorkInit()
+        except:
+            return
         self.th.start()
 
     # 시작 버튼을 눌렀을 때 초기화 함수
@@ -96,6 +97,7 @@ class MainUi(QWidget, form_class):
             self.th.excel.open_workbook(self.excel_file)
             if not self.th.excel.control_status_check():
                 self.logList.addItem('엑셀 파일의 열기에 실패했습니다. 파일 상태를 확인해주세요.')
+                raise FileNotFoundError
 
             self.all_find_checked()
             self.th.keywordAndBlog.clear()
@@ -106,13 +108,16 @@ class MainUi(QWidget, form_class):
             self.rank_limit_read()
         except ValueError:
             self.logList.addItem('아이디 및 키워드 읽기에 실패했습니다. 파일을 초기화해주세요.')
+            raise ValueError
         except Exception as e:
             self.logList.addItem(str(e))
             self.logList.addItem('아이디 및 키워드 읽기에 실패했습니다. 파일을 초기화해주세요.')
+            raise ValueError
 
     def read_keyword_blog_name(self):
         self.keyw = list()
-        self.blog_names = list()
+        self.urls = list()
+        # self.blog_names = list()
         # 23.06.24 : keyword input .txt -> .xlsx
         # try:
         #     with open('./키워드.txt', 'rt', encoding='utf8') as f:
@@ -121,20 +126,27 @@ class MainUi(QWidget, form_class):
         #     # encoding 문제시
         #     with open('./키워드.txt', 'rt') as f:
         #         self.keyw = f.read().split('\n')
+        # 23.06.27 : blog_names is not available.
+        # 23.06.28 : add read url input
+        # try:
+        #     with open('블로그이름.txt', 'rt', encoding='utf8') as f:
+        #         self.blog_names = f.read().split('\n')
+        # except Exception as e:
+        #     with open('블로그이름.txt', 'rt') as f:
+        #         self.blog_names = f.read().split('\n')
         self.keyw = self.th.excel.read_keyword()
-        try:
-            with open('블로그이름.txt', 'rt', encoding='utf8') as f:
-                self.blog_names = f.read().split('\n')
-        except Exception as e:
-            with open('블로그이름.txt', 'rt') as f:
-                self.blog_names = f.read().split('\n')
+        self.urls = self.th.excel.read_urls()
 
-        if self.keyw == [] or self.blog_names == []:
+        # if self.keyw == [] or self.blog_names == []:
+        #     raise ValueError
+        if self.keyw == [] or self.urls == [] or (len(self.keyw) != len(self.urls)):
             raise ValueError
 
-        for first in self.keyw:
-            for second in self.blog_names:
-                self.th.keywordAndBlog.add_link(second, first)
+        for i in range(len(self.keyw)):
+            self.th.keywordAndBlog.add_link(self.urls[i], self.keyw[i])
+        # for first in self.keyw:
+        #     for second in self.blog_names:
+        #         self.th.keywordAndBlog.add_link(second, first)
 
     def rank_limit_read(self):
         try:
@@ -159,16 +171,17 @@ if __name__ == '__main__':
         uac.uacUI()
 
     mainWindow = MainUi()
-    loginui = LoginUI()
-    updateui = updateUI()
-    updateui.mainUI()
+    # 23.06.28 : disable login and update
+    # loginui = LoginUI()
+    # updateui = updateUI()
+    # updateui.mainUI()
 
     logpath = os.path.join('C:\\ProgramData', 'logvr.ps')
     if os.path.exists(logpath):
         mainWindow.show()
         sys.exit(ranking_app.exec_())
     else:
-        loginui = LoginUI()
-        loginui.mainUI()
+        # loginui = LoginUI()
+        #loginui.mainUI()
         mainWindow.show()
         sys.exit(ranking_app.exec_())
