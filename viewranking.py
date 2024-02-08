@@ -1,8 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5 import uic
-import traceback, sys, os
-from UAC import UAC
+import traceback, sys
 from main_engine import main_engine
 import logo_rc
 
@@ -164,11 +163,11 @@ class MainUi(QWidget, form_class):
 
 if __name__ == '__main__':
     ranking_app = QApplication(sys.argv)
-    if len(sys.argv) >= 2 and sys.argv[1] == '--debug':
-        print(f"uac disabled")
-    else:
-        uac = UAC()
-        uac.uacUI()
+    # if len(sys.argv) >= 2 and sys.argv[1] == '--debug':
+    #     print(f"uac disabled")
+    # else:
+    #     uac = UAC()
+    #     uac.uacUI()
 
     mainWindow = MainUi()
     # 23.06.28 : disable login and update
@@ -176,12 +175,12 @@ if __name__ == '__main__':
     # updateui = updateUI()
     # updateui.mainUI()
 
-    logpath = os.path.join('C:\\ProgramData', 'logvr.ps')
-    if os.path.exists(logpath):
-        mainWindow.show()
-        sys.exit(ranking_app.exec_())
-    else:
+    # logpath = os.path.join('C:\\ProgramData', 'logvr.ps')
+    # if os.path.exists(logpath):
+    #     mainWindow.show()
+    #     sys.exit(ranking_app.exec_())
+    # else:
         # loginui = LoginUI()
         #loginui.mainUI()
-        mainWindow.show()
-        sys.exit(ranking_app.exec_())
+    mainWindow.show()
+    sys.exit(ranking_app.exec_())

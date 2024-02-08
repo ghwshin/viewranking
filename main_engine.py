@@ -9,9 +9,8 @@ from PyQt5.QtWidgets import QApplication
 from bs4 import BeautifulSoup
 
 from Control import countControl, searchControl
-from blogKeywordInfo import blogKeywordInfo
-from blogKeywordUrls import blogKeywordUrls
 from ExcelControl import ExcelControl
+from blogKeywordUrls import blogKeywordUrls
 
 
 class main_engine(QThread):
@@ -146,7 +145,7 @@ class main_engine(QThread):
         target_name = current[0]
         current_keyword = current[1]
         self.search_ui_refresh(self.count.count, current_keyword, target_name)
-        self.search.init_control()
+        self.search.init_control(current_keyword)
         rank = self.rankfind(target_name, current_keyword)
         current[2] = rank
         self.keywordAndBlog.add_finish_job(current)

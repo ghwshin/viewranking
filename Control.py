@@ -1,3 +1,7 @@
+import requests
+from bs4 import BeautifulSoup
+
+
 class countControl:
     def __init__(self):
         self.count = 0
@@ -16,6 +20,8 @@ class countControl:
 class searchControl:
     # 24.02.04 : view -> 블로그 탭으로 명칭 변경됨
     # 해당 건 이후 api 쿼리가 암호화? 또는 다른 방식으로 변경된 것으로 보임
+
+    # 24.02.08 : 쿼리 개인화 결과인 enlu_query를 가져오는 방법을 구현
     UNCHANGED = 10000
     NONEXTURL = 10001
     AVALIABLEURL = 10002
@@ -23,7 +29,7 @@ class searchControl:
         self.header = {'User-Agent': 'Mozilla/5.0', 'referer': 'http://naver.com'}
         # self.url = 'https://s.search.naver.com/p/review/search.naver?rev=44&where=view&api_type=11&start=1' + self.urlQueryPart
         self.urlPrefix = "https://s.search.naver.com/p/review/47/search.naver?ssc=tab.blog.all&api_type=4"
-        self.urlSuffix = "&enlu_query=IggCACyAULgRAAAAtdoURqXUdp9ygLuVMM8qJuGb919ekLoOUdX4%2BBeeSh702x4qXTBxPwtc%2BQFzSTZ4YsuNjWhH44SV%2B2Qz3rgw3BVC74f2Dr9mYX89v8e8eeY6ePDDEKVJSf7lD5IEU0BGfOMj3WLM3re5lU6nK%2F6Qzigk3FEemtwKcep4Fep2ELZstOZFKgpfAx6gJrSnwaQop6OC%2BQ%2B18vjhw2OYUef72%2Bx874S%2FJjgiUxIwjKvvCXa8yrclSmG70rX51pdKBeT4oXJGNtkO%2FwtL%2FxPeMaZTEHGKBXBLSFOVS9GY0HFOUn9vGCnemasQ74CG00S5zvttYOi%2BZFAFxF3xoUxH%2B5Y52QPrtWkGQjw7oDJ3b78HYDBvlk6G32%2FF8vgZWXBoExJ58EriU94g10Z0AsMRkL%2FOkRwg%2BOsYWuR%2FzJ5%2FoyViMBMYp4HZ9E8%2BcutbK7GNs7olLeozmj65Myc9mfClpM4BtR5Pdpp1aix%2FbC%2Bqp1%2FdZ4v%2BQtyAFrqP3rDGB%2BCE%2FdQRrtXkuUOaXd%2BOPayzdRmYFJzusMyo3oKrDiULWZ8x%2BjQiYzgNY7evFQO1Xfz2JYxCKnFQ4e%2FQo4pwBEKtAS2kCo74pTUqZ7uIedLLo8ieI3D5HMi2aaQA4y04OamAIadAozKsI0oet2ZXgd3hklTvMywh239p%2FIwht1%2F4HE0luJlio7Be%2B7AiV67z8P4ZFm7K"
+        self.enlu_query = ""
         self.urlQueryPart = '&query='
         self.urlStartPart = "&start="
         self.url = self.urlPrefix + self.urlStartPart + str(1) + self.urlQueryPart
@@ -37,7 +43,18 @@ class searchControl:
     def set_url(self, keyword):
         self.clear_url()
         self.url += keyword
-        self.url += self.urlSuffix
+        self.url += self.enlu_query
+
+    def get_enlu_query(self, target):
+        # 24.02.08 : enlu_query를 가져오는 방법
+        url = "https://search.naver.com/search.naver?ssc=tab.blog.all&sm=tab_jum&query="
+        url += target
+        response = requests.get(url, headers=self.header)
+        html_bs = BeautifulSoup(response.text, "html.parser")
+        enlu_query = "&" + str(html_bs)[
+                           str(html_bs).find("enlu_query"):str(html_bs).find("&abt=&_callback=getBlogContents")]
+        print(enlu_query)
+        self.enlu_query = enlu_query
 
     def search_counting(self):
         if self.isAllSerach:
@@ -50,15 +67,14 @@ class searchControl:
 
     def clear_url(self):
         self.url = self.urlPrefix + self.urlStartPart + str(self.searchCurrentCount) + self.urlQueryPart
-        # self.url = 'https://s.search.naver.com/p/review/search.naver?rev=44&where=view&api_type=11&start=' + str(
-        #     self.searchCurrentCount) + self.urlQueryPart
 
-    def init_control(self):
+    def init_control(self, keyword):
         # self.url = 'https://s.search.naver.com/p/review/search.naver?rev=44&where=view&api_type=11&start=1' + self.urlQueryPart
         self.url = self.urlPrefix + self.urlStartPart + str(1) + self.urlQueryPart
         self.isEnded = False
         self.nextSearchStatus = self.UNCHANGED
         self.searchCurrentCount = 1
+        self.get_enlu_query(keyword)
 
     def clear_maxcount(self):
         self.nextSearchStatus = self.UNCHANGED
