@@ -100,14 +100,6 @@ class main_engine(QThread):
             self.addResult.emit(self.rowcnt - 1, 2, str(rank))
         # self.addResult.emit(self.rowcnt - 1, 2, self.ranklist_to_string(rank))
 
-    """
-    def add_result_item_to_table(self, company, keyword, rank):
-        self.increase_row()
-        self.addResult.emit(self.rowcnt - 1, 0, company)
-        self.addResult.emit(self.rowcnt - 1, 1, keyword)
-        self.addResult.emit(self.rowcnt - 1, 2, str(rank))
-    """
-
     def ranklist_to_string(self, rank_list):
         _restr = str()
         for rank in rank_list:
@@ -132,8 +124,8 @@ class main_engine(QThread):
     def internal_delay(self):
         self.sleep(0.3)
 
-    def search_ui_refresh(self, i, target_keyword, target_name):
-        # _ui_str = "블로그 이름({}) - {}".format(target_name, target_keyword)
+    def search_ui_refresh(self, i, target_keyword, target_url):
+        # _ui_str = "블로그 이름({}) - {}".format(target_url, target_keyword)
         _ui_str = "{} 검색 중...".format(target_keyword)
         self.set_current_keyword_indictor("검색 중인 키워드 : " + _ui_str)
         self.set_keyword_remain_indictor(i)
@@ -142,22 +134,31 @@ class main_engine(QThread):
 
     def keywordSearch(self):
         current = self.keywordAndBlog.dequeue()
-        target_name = current[0]
+        target_url = current[0]
         current_keyword = current[1]
-        self.search_ui_refresh(self.count.count, current_keyword, target_name)
+        self.search_ui_refresh(self.count.count, current_keyword, target_url)
+
+        if target_url == "":
+            # 24.02.08 : URL 미제공 시 처리 기능 추가
+            current[2] = "미처리"
+            self.keywordAndBlog.add_finish_job(current)
+            return
+
         self.search.init_control(current_keyword)
-        rank = self.rankfind(target_name, current_keyword)
-        current[2] = rank
+        rank = self.rankfind(target_url, current_keyword)
+        current[2] = str(rank)
+        if not self.search.is_enlu_query:
+            current[2] += " (확인 필요)"
         self.keywordAndBlog.add_finish_job(current)
 
     # 23.06.28 : rank is one
-    def rankfind(self, target_name, target_keyword):
+    def rankfind(self, target_url, target_keyword):
         self.search.clear_url()
         # rank = list()
         rank = 0
         while True:
             self.search.set_url(target_keyword)
-            tmp_rank, ret = self.find_rank(target_name)
+            tmp_rank, ret = self.find_rank(target_url)
             if ret == True:
                 rank += tmp_rank
                 break
@@ -175,11 +176,11 @@ class main_engine(QThread):
             return -1
 
     # 검색후 url을 찾습니다.
-    def find_rank(self, target_name):
+    def find_rank(self, target_url):
         resource = requests.get(self.search.url, self.search.header)
         html_bs = BeautifulSoup(resource.text, 'html.parser')
         self.update_max_count(html_bs)
-        # 23.06.28 : target_name => url
+        # 23.06.28 : target_url => url
         area = html_bs.find_all('li')
         finded = []
         for href in area:
@@ -187,18 +188,24 @@ class main_engine(QThread):
                 # 23.11.07 : view탭 업데이트로 인한 로직 변경
                 # view_wrap->detail_box->title_area
                 tmp_str = href.contents[1].contents[2].contents[1].contents[1]['href']
+                # 24.02.08 : enlu_query가 없는 검색어에 대한 처리 필요
                 finded.append(tmp_str[2:len(tmp_str) - 2])
             except:
                 # Not wanted information
                 pass
         # area = html_bs.find_all('a', {'class': '\\\"sub_txt'})
         # finded = [tag.text for tag in area]
-        # rank = self.url_blog_name_compare(target_name, finded)
-        rank, ret = self.url_link_exectly_compare(target_name, finded)
+        # rank = self.url_blog_name_compare(target_url, finded)
+        rank, ret = self.url_link_exectly_compare(target_url, finded)
         return rank, ret
 
     def update_max_count(self, html_bs):
         # 24.02.04 : view -> 블로그 탭으로 변경됨
+        # 24.02.08 : enlu_query가 없을때의 처리 추가 필요
+        # if not self.search.is_enlu_query:
+        #     self.search.nextSearchStatus = searchControl.NONEXTURL
+        #     return
+
         next_url = dict(eval("{" + html_bs.text[html_bs.text.find("nextUrl") - 1:len(html_bs.text) - 3]))["nextUrl"]
         if next_url == "":
             self.search.nextSearchStatus = searchControl.NONEXTURL

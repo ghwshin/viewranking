@@ -23,6 +23,8 @@ sys.excepthook = trap_exc_during_debug
 class MainUi(QWidget, form_class):
     def __init__(self):
         super().__init__()
+        self.keyw = None
+        self.urls = None
         self.excel_file = "템플릿.xlsx"
 
         # ui loading
@@ -106,11 +108,11 @@ class MainUi(QWidget, form_class):
             self.read_keyword_blog_name()
             self.rank_limit_read()
         except ValueError:
-            self.logList.addItem('아이디 및 키워드 읽기에 실패했습니다. 파일을 초기화해주세요.')
+            self.logList.addItem('키워드 읽기에 실패했습니다. 키워드 및 엑셀 파일을 확인해주세요.')
             raise ValueError
         except Exception as e:
             self.logList.addItem(str(e))
-            self.logList.addItem('아이디 및 키워드 읽기에 실패했습니다. 파일을 초기화해주세요.')
+            self.logList.addItem('키워드 읽기에 실패했습니다. 파일을 초기화해주세요.')
             raise ValueError
 
     def read_keyword_blog_name(self):
@@ -133,11 +135,9 @@ class MainUi(QWidget, form_class):
         # except Exception as e:
         #     with open('블로그이름.txt', 'rt') as f:
         #         self.blog_names = f.read().split('\n')
-        self.keyw = self.th.excel.read_keyword()
-        self.urls = self.th.excel.read_urls()
+        # 24.02.08 : URL 미제공 시 처리 기능 추가
+        self.keyw, self.urls = self.th.excel.read_all()
 
-        # if self.keyw == [] or self.blog_names == []:
-        #     raise ValueError
         if self.keyw == [] or self.urls == [] or (len(self.keyw) != len(self.urls)):
             raise ValueError
 
@@ -151,7 +151,7 @@ class MainUi(QWidget, form_class):
         try:
             limits = self.rankingLimit.text()
             limits = int(limits)
-            if limits >= 0 and limits <= 9999999:
+            if 0 <= limits <= 9999999:
                 self.th.rankLimits = limits
                 return
             else:

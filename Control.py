@@ -27,8 +27,8 @@ class searchControl:
     AVALIABLEURL = 10002
     def __init__(self):
         self.header = {'User-Agent': 'Mozilla/5.0', 'referer': 'http://naver.com'}
-        # self.url = 'https://s.search.naver.com/p/review/search.naver?rev=44&where=view&api_type=11&start=1' + self.urlQueryPart
         self.urlPrefix = "https://s.search.naver.com/p/review/47/search.naver?ssc=tab.blog.all&api_type=4"
+        self.native_naver_url = "https://search.naver.com/search.naver?sm=tab_hty.top&ssc=tab.blog.all"
         self.enlu_query = ""
         self.urlQueryPart = '&query='
         self.urlStartPart = "&start="
@@ -36,6 +36,7 @@ class searchControl:
 
         self.isAllSerach = True
         self.isEnded = False
+        self.is_enlu_query = True
 
         self.nextSearchStatus = self.UNCHANGED
         self.searchCurrentCount = 1
@@ -54,7 +55,11 @@ class searchControl:
         enlu_query = "&" + str(html_bs)[
                            str(html_bs).find("enlu_query"):str(html_bs).find("&abt=&_callback=getBlogContents")]
         print(enlu_query)
+
         self.enlu_query = enlu_query
+        if self.enlu_query == '&':
+            return False
+        return True
 
     def search_counting(self):
         if self.isAllSerach:
@@ -74,7 +79,10 @@ class searchControl:
         self.isEnded = False
         self.nextSearchStatus = self.UNCHANGED
         self.searchCurrentCount = 1
-        self.get_enlu_query(keyword)
+        if not self.get_enlu_query(keyword):
+            self.is_enlu_query = False
+        else:
+            self.is_enlu_query = True
 
     def clear_maxcount(self):
         self.nextSearchStatus = self.UNCHANGED

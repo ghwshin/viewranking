@@ -13,6 +13,7 @@ class ExcelControl:
     def open_workbook(self, file_name):
         try:
             wb = openpyxl.load_workbook(file_name)
+            self.workbook = wb
         except FileNotFoundError:
             print(f"{file_name} 파일을 찾지 못했음")
             return None
@@ -25,7 +26,7 @@ class ExcelControl:
             return True
 
     def access_point_check(self, row, column):
-        if row <= 1 or column <= 1:
+        if row <= 1 or column <= 0:
             return False
         else:
             return True
@@ -64,13 +65,23 @@ class ExcelControl:
             return None
         return cell_value
 
+    def is_ended(self, row_idx):
+        # 24.02.08 : URL이 없어도 처리하는 기능 추가
+        ret = self._read_excel(row_idx, 1)
+        if ret is None or ret == "":
+            return True
+        return False
+
     def read_keyword(self):
         row_idx = 2
         col_idx = 2
         keywords = []
         while True:
             ret = self._read_excel(row_idx, col_idx)
-            if ret == None or ret == "":
+            # 테이블이 끝났거나 keyword가 존재하지 않으면 break.
+            if self.is_ended(row_idx):
+                break
+            if ret is None or ret == "":
                 break
             # self.row_keyword_pair.append([row_idx, ret])
             # self.row_keyword_pair[ret] = row_idx
@@ -85,13 +96,21 @@ class ExcelControl:
         urls = []
         while True:
             ret = self._read_excel(row_idx, col_idx)
-            if ret == None or ret == "":
+            # 테이블이 끝나면 break.
+            if self.is_ended(row_idx):
                 break
+            if ret is None or ret == "":
+                ret = ""
             # self.row_keyword_pair[ret] = row_idx
             urls.append(ret)
             row_idx += 1
         self.row_num = 1
         return urls
+
+    def read_all(self):
+        keywords = self.read_keyword()
+        urls = self.read_urls()
+        return keywords, urls
 
     def write_rank(self, rank, rank_col=4):
         self.row_num += 1
