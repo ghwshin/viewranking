@@ -25,6 +25,11 @@ class searchControl:
     UNCHANGED = 10000
     NONEXTURL = 10001
     AVALIABLEURL = 10002
+
+    QUERY_BLOG_URL = "https://search.naver.com/search.naver?ssc=tab.blog.all&sm=tab_jum&query="
+    QUERY_SEARCH_URL = "https://search.naver.com/search.naver?ssc=tab.nx.all&where=nexearch&sm=tab_jum&query="
+    POSTFIX_BLOG = "&abt=&_callback=getBlogContents"
+    POSTFIX_SEARCH = "&amp;abt="
     def __init__(self):
         self.header = {'User-Agent': 'Mozilla/5.0', 'referer': 'http://naver.com'}
         self.urlPrefix = "https://s.search.naver.com/p/review/47/search.naver?ssc=tab.blog.all&api_type=4"
@@ -46,19 +51,22 @@ class searchControl:
         self.url += keyword
         self.url += self.enlu_query
 
-    def get_enlu_query(self, target):
+    def get_enlu_query(self, target, url, find_postfix):
         # 24.02.08 : enlu_query를 가져오는 방법
-        url = "https://search.naver.com/search.naver?ssc=tab.blog.all&sm=tab_jum&query="
-        url += target
-        response = requests.get(url, headers=self.header)
+        # blog 탭으로 처음 처리하고 실패하면 일반 검색창을 이용함
+        target_url = url + target
+        response = requests.get(target_url, headers=self.header)
         html_bs = BeautifulSoup(response.text, "html.parser")
         enlu_query = "&" + str(html_bs)[
-                           str(html_bs).find("enlu_query"):str(html_bs).find("&abt=&_callback=getBlogContents")]
-        print(enlu_query)
+                           str(html_bs).find("enlu_query"):str(html_bs).find(find_postfix)]
 
         self.enlu_query = enlu_query
         if self.enlu_query == '&':
-            return False
+            # 찾는데 실패하면 일반 검색창 확인
+            if url == self.QUERY_BLOG_URL:
+                self.get_enlu_query(target, self.QUERY_SEARCH_URL, self.POSTFIX_SEARCH)
+            else:
+                return False
         return True
 
     def search_counting(self):
@@ -79,7 +87,7 @@ class searchControl:
         self.isEnded = False
         self.nextSearchStatus = self.UNCHANGED
         self.searchCurrentCount = 1
-        if not self.get_enlu_query(keyword):
+        if not self.get_enlu_query(keyword, self.QUERY_BLOG_URL, self.POSTFIX_BLOG):
             self.is_enlu_query = False
         else:
             self.is_enlu_query = True

@@ -139,16 +139,16 @@ class main_engine(QThread):
         self.search_ui_refresh(self.count.count, current_keyword, target_url)
 
         if target_url == "":
-            # 24.02.08 : URL 미제공 시 처리 기능 추가
-            current[2] = "미처리"
+            # 24.02.08 : URL 미제공 시 처리 기능 추가 (미처리 시 공백 표기)
+            current[2] = ""
             self.keywordAndBlog.add_finish_job(current)
             return
 
         self.search.init_control(current_keyword)
         rank = self.rankfind(target_url, current_keyword)
-        current[2] = str(rank)
+        current[2] = rank
         if not self.search.is_enlu_query:
-            current[2] += " (확인 필요)"
+            current[2] = (str(rank) + " (확인 필요)")
         self.keywordAndBlog.add_finish_job(current)
 
     # 23.06.28 : rank is one
