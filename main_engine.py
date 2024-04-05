@@ -206,7 +206,8 @@ class main_engine(QThread):
         #     self.search.nextSearchStatus = searchControl.NONEXTURL
         #     return
 
-        next_url = dict(eval("{" + html_bs.text[html_bs.text.find("nextUrl") - 1:len(html_bs.text) - 3]))["nextUrl"]
+        next_url = dict(eval("{" + html_bs.text[html_bs.text.find("nextUrl") - 1:len(html_bs.text) - 3] + "}"))[
+            "nextUrl"]
         if next_url == "":
             self.search.nextSearchStatus = searchControl.NONEXTURL
         else:

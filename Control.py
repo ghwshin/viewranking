@@ -28,7 +28,7 @@ class searchControl:
 
     QUERY_BLOG_URL = "https://search.naver.com/search.naver?ssc=tab.blog.all&sm=tab_jum&query="
     QUERY_SEARCH_URL = "https://search.naver.com/search.naver?ssc=tab.nx.all&where=nexearch&sm=tab_jum&query="
-    POSTFIX_BLOG = "&abt=&_callback=getBlogContents"
+    POSTFIX_BLOG = "&abt="
     POSTFIX_SEARCH = "&amp;abt="
     def __init__(self):
         self.header = {'User-Agent': 'Mozilla/5.0', 'referer': 'http://naver.com'}
