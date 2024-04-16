@@ -322,6 +322,7 @@ class main_engine(QThread):
                 if not self.excel.write_rank(rank):
                     raise IOError
                 self.add_result_item_to_table_notcompany(keyword, url, rank)
+            self.excel.save_excel_file()
         except Exception as e:
             self.error_add()
             self.error_emit.emit('순위 결과를 쓰는 도중 문제가 발생했습니다.')

@@ -42,14 +42,6 @@ class ExcelControl:
         for i, row_data in enumerate(data):
             for j, cell_data in enumerate(row_data):
                 ws.cell(row=row + i, column=column + j, value=cell_data)
-        try:
-            # 23.07.02 : 엑셀 파일 별도 파일 저장
-            today = datetime.today().strftime('%Y-%m-%d')
-            excel_write_path = './결과/통합순위_' + today + '.xlsx'
-            self.workbook.save(excel_write_path)
-        except Exception as e:
-            print(e)
-            return False
         return True
 
     def _read_excel(self, row, column):
@@ -64,6 +56,17 @@ class ExcelControl:
             print(e)
             return None
         return cell_value
+
+    def save_excel_file(self):
+        try:
+            # 23.07.02 : 엑셀 파일 별도 파일 저장
+            today = datetime.today().strftime('%Y-%m-%d')
+            excel_write_path = './결과/통합순위_' + today + '.xlsx'
+            self.workbook.save(excel_write_path)
+            return True
+        except Exception as e:
+            print(e)
+            return False
 
     def is_ended(self, row_idx):
         # 24.02.08 : URL이 없어도 처리하는 기능 추가
