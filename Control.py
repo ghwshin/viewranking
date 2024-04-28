@@ -1,6 +1,20 @@
 import requests
 from bs4 import BeautifulSoup
 
+import Control
+
+
+def get_request_from_url(target_url):
+    try_num = 0
+    response = None
+    while try_num < 10:
+        try:
+            response = requests.get(target_url, headers=searchControl.HEADER)
+        except:
+            try_num += 1
+            continue
+        break
+    return response
 
 class countControl:
     def __init__(self):
@@ -30,8 +44,9 @@ class searchControl:
     QUERY_SEARCH_URL = "https://search.naver.com/search.naver?ssc=tab.nx.all&where=nexearch&sm=tab_jum&query="
     POSTFIX_BLOG = "&abt="
     POSTFIX_SEARCH = "&amp;abt="
+    HEADER = {'User-Agent': 'Mozilla/5.0', 'referer': 'http://naver.com'}
+
     def __init__(self):
-        self.header = {'User-Agent': 'Mozilla/5.0', 'referer': 'http://naver.com'}
         self.urlPrefix = "https://s.search.naver.com/p/review/47/search.naver?ssc=tab.blog.all&api_type=4"
         self.native_naver_url = "https://search.naver.com/search.naver?sm=tab_hty.top&ssc=tab.blog.all"
         self.enlu_query = ""
@@ -55,7 +70,10 @@ class searchControl:
         # 24.02.08 : enlu_query를 가져오는 방법
         # blog 탭으로 처음 처리하고 실패하면 일반 검색창을 이용함
         target_url = url + target
-        response = requests.get(target_url, headers=self.header)
+        response = Control.get_request_from_url(target_url)
+        # 24.04.28 : 접속 실패시 재시도 추가
+        if response is None:
+            return False
         html_bs = BeautifulSoup(response.text, "html.parser")
         enlu_query = "&" + str(html_bs)[
                            str(html_bs).find("enlu_query"):str(html_bs).find(find_postfix)]

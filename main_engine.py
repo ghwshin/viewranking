@@ -8,6 +8,7 @@ from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QApplication
 from bs4 import BeautifulSoup
 
+import Control
 from Control import countControl, searchControl
 from ExcelControl import ExcelControl
 from blogKeywordUrls import blogKeywordUrls
@@ -177,7 +178,13 @@ class main_engine(QThread):
 
     # 검색후 url을 찾습니다.
     def find_rank(self, target_url):
-        resource = requests.get(self.search.url, self.search.header)
+        # resource = requests.get(self.search.url, searchControl.HEADER)
+        resource = Control.get_request_from_url(self.search.url)
+        if resource is None:
+            self.addloglist("인터넷 접속에 실패했습니다. 다음으로 진행합니다.")
+            self.search.isEnded = True
+            self.search.nextSearchStatus = searchControl.NONEXTURL
+            return -1, False
         html_bs = BeautifulSoup(resource.text, 'html.parser')
         self.update_max_count(html_bs)
         # 23.06.28 : target_url => url
