@@ -47,7 +47,7 @@ class searchControl:
     HEADER = {'User-Agent': 'Mozilla/5.0', 'referer': 'http://naver.com'}
 
     def __init__(self):
-        self.urlPrefix = "https://s.search.naver.com/p/review/47/search.naver?ssc=tab.blog.all&api_type=4"
+        self.urlPrefix = "https://s.search.naver.com/p/review/48/search.naver?ssc=tab.blog.all&api_type=8"
         self.native_naver_url = "https://search.naver.com/search.naver?sm=tab_hty.top&ssc=tab.blog.all"
         self.enlu_query = ""
         self.urlQueryPart = '&query='
