@@ -196,7 +196,10 @@ class main_engine(QThread):
                 # view_wrap->detail_box->title_area
                 tmp_str = href.contents[1].contents[2].contents[1].contents[1]['href']
                 # 24.02.08 : enlu_query가 없는 검색어에 대한 처리 필요
-                finded.append(tmp_str[2:len(tmp_str) - 2])
+                # 24.08.04 : blog.naver.com 확인 루틴 추가
+                tmp_str = tmp_str[2:len(tmp_str) - 2]
+                if "blog.naver.com" in tmp_str:
+                    finded.append(tmp_str)
             except:
                 # Not wanted information
                 pass
