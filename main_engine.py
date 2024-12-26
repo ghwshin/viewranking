@@ -216,8 +216,9 @@ class main_engine(QThread):
         #     self.search.nextSearchStatus = searchControl.NONEXTURL
         #     return
 
-        next_url = dict(eval("{" + html_bs.text[html_bs.text.find("nextUrl") - 1:len(html_bs.text) - 3] + "}"))[
-            "nextUrl"]
+        # 24.12.27 : api nextUrl -> url 로 변경됨
+        next_url = dict(eval("{" + html_bs.text[html_bs.text.find("url") - 1:len(html_bs.text) - 3] + "}"))[
+            "url"]
         if next_url == "":
             self.search.nextSearchStatus = searchControl.NONEXTURL
         else:
@@ -268,7 +269,8 @@ class main_engine(QThread):
     def url_link_exectly_compare(self, target, urls):
         rank = 1
         for url in urls:
-            if url == target:
+            # 24.12.27 : m.blog 와 blog가 섞여 있어도 비교 가능하게 수정
+            if url[url.find("com"):] == target[target.find("com"):]:
                 return rank, True
             rank += 1
         return rank, False

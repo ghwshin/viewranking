@@ -4,6 +4,7 @@ from PyQt5 import uic
 import traceback, sys
 from main_engine import main_engine
 import logo_rc
+from updateui import updateUI
 
 form_class = uic.loadUiType('ranking.ui')[0]
 
@@ -172,8 +173,10 @@ if __name__ == '__main__':
     mainWindow = MainUi()
     # 23.06.28 : disable login and update
     # loginui = LoginUI()
-    # updateui = updateUI()
-    # updateui.mainUI()
+
+    # 24.12.27 : update(보안 UI) 재추가
+    updateui = updateUI()
+    updateui.mainUI()
 
     # logpath = os.path.join('C:\\ProgramData', 'logvr.ps')
     # if os.path.exists(logpath):
