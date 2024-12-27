@@ -186,7 +186,7 @@ class main_engine(QThread):
             self.search.nextSearchStatus = searchControl.NONEXTURL
             return -1, False
         html_bs = BeautifulSoup(resource.text, 'html.parser')
-        # print(html_bs.text)
+        print(html_bs.text)
         self.update_max_count(html_bs)
         # 23.06.28 : target_url => url
         area = html_bs.find_all('li')
@@ -219,7 +219,7 @@ class main_engine(QThread):
 
         # 24.12.27 : api nextUrl -> url 로 변경됨
         # Fix: url을 역순탐색하도록 변경
-        next_url = dict(eval("{" + html_bs.text[html_bs.text.rfind("url") - 1:len(html_bs.text) - 3] + "}"))[
+        next_url = dict(eval("{" + html_bs.text[html_bs.text.rfind("url\":") - 1:len(html_bs.text) - 3] + "}"))[
             "url"]
         if next_url == "":
             self.search.nextSearchStatus = searchControl.NONEXTURL
