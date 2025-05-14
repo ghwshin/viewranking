@@ -1,3 +1,6 @@
+import re
+import time
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -7,13 +10,16 @@ import Control
 def get_request_from_url(target_url):
     try_num = 0
     response = None
-    while try_num < 10:
+    while try_num < 5:
         try:
             response = requests.get(target_url, headers=searchControl.HEADER)
-            # print(response.status_code)
-            # print(response.text)
+            # 25.05.14 : Request 실패 시 재시도 추가
+            if response.status_code != 200:
+                print("Request Error : " + str(response.status_code))
+                raise Exception("Request Error : " + str(response.status_code))
         except:
             try_num += 1
+            time.sleep(1)
             continue
         break
     return response
@@ -76,6 +82,29 @@ class searchControl:
         self.url += keyword
         self.url += self.enlu_query
 
+    def extract_enlu_query(self, html_text):
+        """25.05.14 : URL에서 enlu_query 파라미터 값을 추출하는 함수"""
+        ret = None
+        try:
+            pattern = re.compile(r'&enlu_query=(.*?)&abt=')
+            match = pattern.search(html_text)
+
+            if match:
+                ret = match.group(1)
+            else:
+                # 백업 패턴: abt 파라미터가 없을 경우를 대비
+                backup_pattern = re.compile(r'&enlu_query=(.*?)&(?:enqx_theme|[a-z]+)=')
+                backup_match = backup_pattern.search(html_text)
+
+                if backup_match:
+                    ret = backup_match.group(1)
+
+            ret = '&enlu_query=' + ret
+            return ret
+        except Exception as e:
+            print(f"enlu_query 추출 중 오류 발생: {e}")
+            return ret
+
     def get_enlu_query(self, target, url, find_postfix):
         # 24.02.08 : enlu_query를 가져오는 방법
         # blog 탭으로 처음 처리하고 실패하면 일반 검색창을 이용함
@@ -85,10 +114,8 @@ class searchControl:
         if response is None:
             return False
         html_bs = BeautifulSoup(response.text, "html.parser")
-        enlu_query = "&" + str(html_bs)[
-                           str(html_bs).find("enlu_query"):str(html_bs).find(find_postfix)]
+        self.enlu_query = self.extract_enlu_query(str(html_bs))
 
-        self.enlu_query = enlu_query
         if self.enlu_query == '&':
             # 찾는데 실패하면 일반 검색창 확인
             if url == self.QUERY_BLOG_URL:

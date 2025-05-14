@@ -1,4 +1,5 @@
 import datetime
+import json
 import re
 import traceback
 
@@ -219,8 +220,13 @@ class main_engine(QThread):
 
         # 24.12.27 : api nextUrl -> url 로 변경됨
         # Fix: url을 역순탐색하도록 변경
-        next_url = dict(eval("{" + html_bs.text[html_bs.text.rfind("url\":") - 1:len(html_bs.text) - 3] + "}"))[
-            "url"]
+        # 25.05.14 : eval -> 정규표현식 변경 (디코딩 실패 강건화)
+        next_url_match = re.search(r'"url"\s*:\s*"(https?://[^"]+?search\.naver[^"]*?)"', html_bs.text)
+        if next_url_match:
+            next_url = next_url_match.group(1)
+        else:
+            next_url = ""
+
         if next_url == "":
             self.search.nextSearchStatus = searchControl.NONEXTURL
         else:
