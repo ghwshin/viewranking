@@ -84,7 +84,7 @@ class searchControl:
 
     def extract_enlu_query(self, html_text):
         """25.05.14 : URL에서 enlu_query 파라미터 값을 추출하는 함수"""
-        ret = None
+        ret = ''
         try:
             pattern = re.compile(r'&enlu_query=(.*?)&abt=')
             match = pattern.search(html_text)
@@ -116,7 +116,7 @@ class searchControl:
         html_bs = BeautifulSoup(response.text, "html.parser")
         self.enlu_query = self.extract_enlu_query(str(html_bs))
 
-        if self.enlu_query == '&':
+        if self.enlu_query == '':
             # 찾는데 실패하면 일반 검색창 확인
             if url == self.QUERY_BLOG_URL:
                 self.get_enlu_query(target, self.QUERY_SEARCH_URL, self.POSTFIX_SEARCH)
