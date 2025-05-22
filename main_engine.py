@@ -187,27 +187,31 @@ class main_engine(QThread):
             self.search.nextSearchStatus = searchControl.NONEXTURL
             return -1, False
         html_bs = BeautifulSoup(resource.text, 'html.parser')
-        print(html_bs.text)
+
+        # 25.05.22 출력 상태 json 변경됨 확인
+        # JSON 형태의 데이터 추출 및 파싱
+        try:
+            # JSON 데이터 파싱 및 'collection' 항목의 첫 번째 요소에서 'html' 키 값 추출
+            json_data = json.loads(html_bs.text)
+            html_content = json_data.get('collection', [{}])[0].get('html', '')
+
+            # 추출된 HTML 콘텐츠로 새로운 BeautifulSoup 객체 생성
+            html_bs = BeautifulSoup(html_content, 'html.parser')
+        except (ValueError, json.JSONDecodeError, KeyError, IndexError) as e:
+            # JSON 파싱 실패 시 원본 HTML 그대로 사용
+            self.addloglist(f"JSON 파싱 중 오류가 발생했습니다: {str(e)}")
+            # 기존 html_bs 객체는 그대로 사용
+
         self.update_max_count(html_bs)
         # 23.06.28 : target_url => url
-        area = html_bs.find_all('li')
+        # 25.05.22 : api 출력 변경 - search to a.title_link
+        title_links = html_bs.find_all('a', class_='title_link')
         finded = []
-        for href in area:
-            try:
-                # 23.11.07 : view탭 업데이트로 인한 로직 변경
-                # view_wrap->detail_box->title_area
-                tmp_str = href.contents[1].contents[2].contents[1].contents[1]['href']
-                # 24.02.08 : enlu_query가 없는 검색어에 대한 처리 필요
-                # 24.08.04 : blog.naver.com 확인 루틴 추가
-                tmp_str = tmp_str[2:len(tmp_str) - 2]
-                if "blog.naver.com" in tmp_str:
-                    finded.append(tmp_str)
-            except:
-                # Not wanted information
-                pass
-        # area = html_bs.find_all('a', {'class': '\\\"sub_txt'})
-        # finded = [tag.text for tag in area]
-        # rank = self.url_blog_name_compare(target_url, finded)
+
+        for link in title_links:
+            href = link.get('href')
+            if href and ('blog.naver.com' in href or 'm.blog.naver.com' in href):
+                finded.append(href)
         rank, ret = self.url_link_exectly_compare(target_url, finded)
         return rank, ret
 

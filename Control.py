@@ -13,10 +13,6 @@ def get_request_from_url(target_url):
     while try_num < 5:
         try:
             response = requests.get(target_url, headers=searchControl.HEADER)
-            # 25.05.14 : Request 실패 시 재시도 추가
-            if response.status_code != 200:
-                print("Request Error : " + str(response.status_code))
-                raise Exception("Request Error : " + str(response.status_code))
         except:
             try_num += 1
             time.sleep(1)
